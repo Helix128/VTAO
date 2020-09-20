@@ -32,7 +32,7 @@
  
  Can VTAO be baked at runtime?
  
- -Yes,just call VGI_Main.BakeObject(<Object to bake>,<Ray length>);
+ -Yes,just call VGI_Main.BakeObject([Object to bake],[Ray length]);
  
  However, its not suggested to use it in realtime, and even though a realtime demo script is provided its only meant to be used for demonstration/benchmarking purposes.
  
