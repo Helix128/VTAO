@@ -5,10 +5,10 @@ using Unity.Collections;
 using Unity.Jobs;
 public class VGI_Main : MonoBehaviour
 {
-
-    public static void BakeObject(GameObject obj,float rayLength)
+    public static bool useDebug;
+    public static void BakeObject(GameObject obj,float rayLength,bool stochastic = false,int sampleCount = 8)
     {
-
+        float startTime = Time.realtimeSinceStartup;
         Mesh mesh = obj.GetComponent<MeshFilter>().sharedMesh;
         List<Vector3> vert = new List<Vector3>();
         mesh.GetVertices(vert);
@@ -16,14 +16,25 @@ public class VGI_Main : MonoBehaviour
         mesh.GetNormals(norm);
         Color[] colors = new Color[vert.Count];
 
-        var results = new NativeArray<RaycastHit>(mesh.vertexCount, Allocator.TempJob);
+        for (int r = 0; r < sampleCount; r++)
+        {
+
+    
+      
+        var results = new NativeArray<RaycastHit>(mesh.vertexCount , Allocator.TempJob);
 
         var commands = new NativeArray<RaycastCommand>(mesh.vertexCount, Allocator.TempJob);
 
 
         for (int i = 0; i < mesh.vertexCount; i++)
         {
-            commands[i] = new RaycastCommand(obj.transform.localToWorldMatrix.MultiplyPoint(vert[i]) + obj.transform.localToWorldMatrix.MultiplyVector(norm[i]) * 0.002f, obj.transform.localToWorldMatrix.MultiplyVector(norm[i]), rayLength);
+                
+                Vector3 randomVectors = new Vector3(Random.Range(-1,1),Random.Range(-1,1),Random.Range(-1,1))*0.3f;
+                if (!stochastic)
+                {
+                    randomVectors = Vector3.zero;
+                }
+            commands[i] = new RaycastCommand(obj.transform.localToWorldMatrix.MultiplyPoint(vert[i]) + obj.transform.localToWorldMatrix.MultiplyVector(norm[i]) * 0.002f, obj.transform.localToWorldMatrix.MultiplyVector(norm[i])+randomVectors, rayLength);
 
 
         }
@@ -34,17 +45,24 @@ public class VGI_Main : MonoBehaviour
             if (results[i].collider != null)
             {
                 RaycastHit hit = results[i];
-             
-                    colors[i] = fromValue(Mathf.Clamp01(hit.distance / rayLength));
-                
-            }
+                    if (!isPointLit(hit.point+hit.normal*0.01f))
+                    {
+                        colors[i] += fromValue(Mathf.Clamp01(hit.distance / rayLength)) / sampleCount;
+                    }
+                    else
+                    {
+                        colors[i] += Color.white/sampleCount;
+                    }
+                }
             else
             {
-                colors[i] = Color.white;
+                colors[i] += Color.white/sampleCount;
             }
         }
-        commands.Dispose();
-        results.Dispose();
+            commands.Dispose();
+            results.Dispose();
+        }
+    if(useDebug)   Debug.Log("Baked object " + obj.name + " in " + (Time.realtimeSinceStartup-startTime) + "ms");
         mesh.SetColors(colors);
 
     }
@@ -72,7 +90,7 @@ public class VGI_Main : MonoBehaviour
 
         for (int i = 0; i < mesh.vertexCount; i++)
         {
-            commands[i] = new RaycastCommand(obj.transform.localToWorldMatrix.MultiplyPoint(vert[i]) + obj.transform.localToWorldMatrix.MultiplyVector(norm[i]) * 0.001f, Vector3.up, 512f);
+            commands[i] = new RaycastCommand(obj.transform.localToWorldMatrix.MultiplyPoint(vert[i]) + obj.transform.localToWorldMatrix.MultiplyVector(norm[i]) * 0.001f,-sunDir, 512f);
 
 
         }

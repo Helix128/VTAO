@@ -7,6 +7,7 @@ public class DemoRealtimeGI : MonoBehaviour
     public float updateRate;
     float timer;
     MeshFilter[] meshList;
+    public bool thisOnly;
     private void Start()
     {
         meshList = FindObjectsOfType<MeshFilter>();
@@ -19,9 +20,16 @@ public class DemoRealtimeGI : MonoBehaviour
         {
 
             timer = updateRate;
-            for (int i = 0; i < meshList.Length; i++)
+            if (!thisOnly)
             {
-                VGI_Main.BakeObject(meshList[i].gameObject,1f);
+                for (int i = 0; i < meshList.Length; i++)
+                {
+                    VGI_Main.BakeObject(meshList[i].gameObject, 1f);
+                }
+            }
+            else
+            {
+                VGI_Main.BakeObject(gameObject, 3f, false, 1);
             }
         }
     }
