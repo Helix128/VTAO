@@ -18,7 +18,7 @@
  - Bake with Children
  
  - Bake entire scene
- [google.com]uwu
+
  For the 2 first modes, you must input a target object in the GUI slot for it.
  
  "Bake" bakes the target object only.
